@@ -1,37 +1,79 @@
-const { Client, Intents } = require("discord.js")
+const fs = require('fs');
+const MODULES_PATH = './modules'
 
-const bot = new Client({
-  intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_VOICE_STATES, Intents.FLAGS.DIRECT_MESSAGES, Intents.FLAGS.GUILD_MESSAGE_REACTIONS],
-  partials: ['CHANNEL', 'MESSAGE','REACTION'],
-});
+var STRIP_COMMENTS = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/mg;
+var ARGUMENT_NAMES = /([^\s,]+)/g;
 
-const commandsInits = {
-  play: require('./commands/play')
+const getParamNames = (func) => {
+  if (!func)
+    debugger
+  var fnStr = func.toString().replace(STRIP_COMMENTS, '');
+  var result = fnStr.slice(fnStr.indexOf('(') + 1, fnStr.indexOf(')')).match(ARGUMENT_NAMES);
+  if (result === null)
+    result = [];
+  let structured
+  for (let i = 0; i < result.length; i++) {
+    const argName = result[i]
+    if (argName === '{') {
+      structured = []
+      result.splice(i--, 1)
+    }
+    else if (structured) {
+      result.splice(i--, 1)
+      if (argName === '}') {
+        result.splice(i, 0, structured)
+        structured = null
+      } else {
+        structured.push(argName)
+      }
+    }
+  }
+  return result;
 }
 
-const commands = {}
+const modulesInits = {}
+const modules = {}
 
-bot.on("ready", async () => {
-  console.log(`Logged in as ${bot.user.tag}!`)
+const initModule = async (moduleName) => {
 
-  for (const commandName in commandsInits) {
-    commands[commandName] = await commandsInits[commandName](bot)
-  }
-
-})
-
-bot.on("messageCreate", async (msg) => {
-  if (!msg.content.startsWith('!') || msg.author.username === bot.user.username) {
+  if (modules[moduleName]) {
     return
   }
 
-  const [commandName, ...args] = msg.content.replace('!', '').split(' ')
-  const command = commands[commandName]
-  if (!command) {
-    return
+  let [dependenciesNames] = getParamNames(modulesInits[moduleName])
+  if (!(dependenciesNames instanceof Array)) {
+    dependenciesNames = []
   }
-  console.log(commandName, ...args)
-  await command(msg, ...args)
-})
 
-bot.login("OTU2NjgzNDg1MDgxMzg3MDc4.Yjzy7Q.GqWNLPPkrerAF7qn9gtCIvPJ3EU");
+  for (const dependencyName of dependenciesNames) {
+    await initModule(dependencyName)
+  }
+  const dependencies = dependenciesNames.reduce((acc, dependencyName) => {
+    acc[dependencyName] = modules[dependencyName]
+    return acc
+  }, {})
+  modules[moduleName] = await modulesInits[moduleName](dependencies)
+}
+
+const initModules = async () => {
+  const files = fs.readdirSync(MODULES_PATH);
+  for (const file of files) {
+    const moduleName = file.replace('.js', '')
+    let moduleIndexPath = `${MODULES_PATH}/${file}`
+
+    const stat = fs.statSync(moduleIndexPath)
+    if (stat.isDirectory()) {
+      moduleIndexPath += '/index.js'
+      if (!fs.existsSync(moduleIndexPath)) {
+        continue
+      }
+    }
+    modulesInits[moduleName] = require(moduleIndexPath)
+  }
+
+  for (const moduleName in modulesInits) {
+    await initModule(moduleName)
+  }
+}
+
+initModules()
