@@ -1,0 +1,7 @@
+install python
+https://docs.python-guide.org/starting/install3/linux
+
+npm i node-pre-gyp -g
+
+https://stackoverflow.com/questions/69210258/discord-js-voice-how-to-create-an-audioresource
+https://github.com/play-dl/play-dl/blob/main/examples/YouTube/play%20-%20url.jss
