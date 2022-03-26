@@ -2,4 +2,4 @@
 
 A bot for discord
 
-- music
+- music with youtube
