@@ -38,9 +38,11 @@ module.exports = class Self {
   event(eventName, fn) {
     const event = []
     this.events[eventName] = event
-
-    return async (...initialArgs) => {
-      return await chain(event, (...finalArgs) => {
+    if (!fn) {
+      fn = () => { }
+    }
+    return (...initialArgs) => {
+      return chain(event, (...finalArgs) => {
         return fn(...finalArgs)
       }, initialArgs)
     }
@@ -48,5 +50,20 @@ module.exports = class Self {
 
   on(eventName, listener) {
     this.events[eventName].push(listener)
+  }
+
+  after(eventName, listener) {
+    this.on(eventName, async (next, ...args) => {
+      const result = await next(...args)
+      listener(result)
+      return result
+    })
+  }
+
+  before(eventName, listener) {
+    this.on(eventName, (next, ...args) => {
+      listener(...args)
+      return next(...args)
+    })
   }
 }

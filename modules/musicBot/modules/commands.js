@@ -10,18 +10,26 @@ module.exports = (self, { bot, playlist, youtube }) => {
   let voiceConnection
   const audioPlayer = createAudioPlayer()
 
-  self.getter('status', () => audioPlayer.state.status)
-
-  audioPlayer.on('idle', playlist.endCurrent)
-
-  playlist.on('change', async (next) => {
-    const music = await next()
-    await play()
+  const playCurrent = self.event('playCurrent', async () => {
+    const music = playlist.current()
+    if (!music) {
+      return
+    }
+    console.log("playing", music)
+    const stream = await ytdl(music.url, { filter: 'audioonly', highWaterMark: 1 << 25 });
+    const audioResource = createAudioResource(stream, { inlineVolume: true })
+    audioPlayer.play(audioResource)
     return music
   })
 
+
+
+  self.getter('status', () => audioPlayer.state.status)
   self.pause = () => audioPlayer.pause()
   self.unpause = () => audioPlayer.unpause()
+  const currentEnded = self.event('currentEnded', playlist.pop)
+  audioPlayer.on('idle', currentEnded)
+  playlist.before('change', playCurrent)
 
   self.stop = self.event('stop', async () => {
     playlist.reset()
@@ -32,12 +40,11 @@ module.exports = (self, { bot, playlist, youtube }) => {
     }
   })
 
-  const start = self.event('start', async (voiceChannel) => {
+  const musicsAdded = self.event('musicAdded')
+
+  const joinChannel = async (voiceChannel) => {
     if (voiceConnection) {
       if (voiceConnection.joinConfig.channelId === voiceChannel.id) {
-        if (self.status === 'idle') {
-          await play()
-        }
         return
       }
       await stop()
@@ -50,27 +57,14 @@ module.exports = (self, { bot, playlist, youtube }) => {
     })
 
     voiceConnection.subscribe(audioPlayer)
-    await play()
-  })
+  }
 
 
-
-  const play = self.event('play', async () => {
-    const music = playlist.current()
-    if (!music) {
-      return
-    }
-    console.log("playing", music)
-    const stream = await ytdl(music.url, { filter: 'audioonly', highWaterMark: 1 << 25 });
-    const audioResource = createAudioResource(stream, { inlineVolume: true })
-    audioPlayer.play(audioResource)
-  })
 
   const processPlayArgs = async (msg, query, handlePlaylist) => {
     const voiceChannel = msg.member.voice?.channel
     if (!voiceChannel)
       return
-
     if (query.startsWith(YOUTUBE_URL)) {
       const url = new URL(query)
 
@@ -109,8 +103,11 @@ module.exports = (self, { bot, playlist, youtube }) => {
         return
       addVideo({ id: video.id.videoId, title: video.snippet.title }, msg.author)
     }
-
-    await start(voiceChannel)
+    musicsAdded()
+    await joinChannel(voiceChannel)
+    if (self.status === 'idle') {
+      await playCurrent()
+    }
   }
 
   const commands = {

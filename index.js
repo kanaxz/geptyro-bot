@@ -8,5 +8,10 @@ const global = new Module({
   initFunction: () => { }
 })
 
-global.init()
+const start = async () => {
+  await global.init()
+  global.printTree()
+}
 
+
+start()

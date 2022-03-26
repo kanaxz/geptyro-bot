@@ -11,6 +11,16 @@ module.exports = class Module {
       this[p] = values[p]
   }
 
+  printTree() {
+    if (!this.level) {
+      console.log('TREE')
+    }
+    console.log(' '.repeat(this.level * 2), this.name)
+    for (const moduleName in this.modules) {
+      this.modules[moduleName].printTree()
+    }
+  }
+
   findModule(moduleName) {
     if (this.name === moduleName) {
       return this
@@ -42,7 +52,6 @@ module.exports = class Module {
     }
     this.isInitialized = true
     await this.initModules()
-    console.log('tree', ' '.repeat(this.level * 2), this.name)
   }
 
   async initModules() {

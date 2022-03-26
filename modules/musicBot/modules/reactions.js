@@ -37,12 +37,11 @@ module.exports = (self, { playlist, playlistMessage, commands, bot }) => {
         }
       }
     } catch (e) {
-      
+
     }
   }
 
-  playlistMessage.on('update', async (next) => {
-    const scopePlaylistMessage = await next()
+  playlistMessage.after('update', async (scopePlaylistMessage) => {
     if (!playlist.length) {
       return
     }
@@ -55,6 +54,5 @@ module.exports = (self, { playlist, playlistMessage, commands, bot }) => {
       await reactions[reaction.emoji.name].execute()
       await updateReactions(scopePlaylistMessage)
     })
-    return scopePlaylistMessage
   })
 }

@@ -18,6 +18,8 @@ module.exports = (self) => {
     return music
   })
 
+  const finish = self.event('finish')
+
   self.next = self.event('next', () => {
     if (!self.canNext()) {
       throw new Error('Cannot go next')
@@ -37,15 +39,20 @@ module.exports = (self) => {
     return playlist[self.currentIndex]
   }
 
-  self.endCurrent = self.event('endCurrent', () => {
+  self.pop = () => {
     const current = self.current()
     playlist.splice(self.currentIndex, 1)
     if (self.currentIndex >= playlist.length && playlist.length) {
       self.currentIndex--
     }
-    change(self.current())
+    if (playlist.length) {
+      change(self.current())
+    } else {
+      finish()
+    }
+
     return current
-  })
+  }
 
   self.reset = self.event('reset', () => {
     while (playlist.length) {

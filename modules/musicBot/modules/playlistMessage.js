@@ -14,7 +14,6 @@ module.exports = (self, { musicBot, playlist, commands }) => {
 
     if (playlist.length) {
       const musics = playlist.map(({ url, name, username }, index) => {
-        console.log(index, playlist.currentIndex)
         return {
           position: index - playlist.currentIndex || 'now',
           name: `[${name}](${url})`,
@@ -37,31 +36,23 @@ module.exports = (self, { musicBot, playlist, commands }) => {
     return scopePlaylistMessage
   })
 
-  commands.on('start', (next, ...args) => {
+  playlist.after('finish', updatePlaylistMessage)
+  commands.before('playCurrent', updatePlaylistMessage)
+  commands.after('musicsAdded', () => {
+    // if not playing, already handled through playCurrent event
+    if (commands.status === 'idle')
+      return
     updatePlaylistMessage()
-    return next(...args)
   })
-
-  commands.on('stop', async (next) => {
+  commands.after('currentEnded', async (music) => {
+    await musicBot.musicChannel.send(`Played ${music.url} by ${music.username}`)
+  })
+  commands.before('stop', async () => {
     if (playlistMessage) {
       playlistMessage.delete()
       playlistMessage = null
     }
-    return next()
   })
 
-  playlist.on('change', (next) => {
-    const music = next()
-    updatePlaylistMessage()
-    return music
-  })
 
-  playlist.on('endCurrent', async (next) => {
-    const music = await next()
-    setTimeout(async () => {
-      await musicBot.musicChannel.send(`Played ${music.url} by ${music.username}`)
-      await updatePlaylistMessage()
-    })
-    return music
-  })
 }
