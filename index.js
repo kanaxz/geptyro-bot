@@ -1,11 +1,14 @@
-const Module = require('./Module')
+const Module = require('./core/Module')
 
 const global = new Module({
   name: 'global',
   self: {},
-  path: './',
+  path: __dirname,
   level: 0,
-  initFunction: () => { }
+  isDirectory: true,
+  modulation: {
+    initFunction: () => { }
+  }
 })
 
 const start = async () => {

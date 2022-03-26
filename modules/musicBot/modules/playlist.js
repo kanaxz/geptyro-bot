@@ -1,16 +1,8 @@
 
-module.exports = (self) => {
-
+module.exports = (self, { musicBot }) => {
+  const state = musicBot.state
   let playlist = []
   self.currentIndex = 0
-
-  self.canNext = () => {
-    return playlist.length > self.currentIndex + 1
-  }
-
-  self.canPrevious = () => {
-    return self.currentIndex - 1 >= 0
-  }
 
   self.wrap(playlist, ['length', 'map', 'push'])
 
@@ -21,18 +13,27 @@ module.exports = (self) => {
   const finish = self.event('finish')
 
   self.next = self.event('next', () => {
-    if (!self.canNext()) {
-      throw new Error('Cannot go next')
+
+    self.currentIndex++
+    // should only happen if repeat = true
+    if (self.currentIndex >= playlist.length) {
+      self.currentIndex = 0
     }
 
-    change(playlist[++self.currentIndex])
+    change(self.current())
   })
 
   self.previous = self.event('previous', () => {
     if (!self.canPrevious()) {
       throw new Error('Cannot go previous')
     }
-    change(playlist[--self.currentIndex])
+    self.currentIndex--
+    // should only happen if repeat = true
+
+    if (self.currentIndex < 0) {
+      self.currentIndex = playlist.length - 1
+    }
+    change(self.current())
   })
 
   self.current = () => {
@@ -41,6 +42,10 @@ module.exports = (self) => {
 
   self.pop = () => {
     const current = self.current()
+    if (state.repeat) {
+      self.next()
+      return current
+    }
     playlist.splice(self.currentIndex, 1)
     if (self.currentIndex >= playlist.length && playlist.length) {
       self.currentIndex--
@@ -50,7 +55,6 @@ module.exports = (self) => {
     } else {
       finish()
     }
-
     return current
   }
 
@@ -58,7 +62,7 @@ module.exports = (self) => {
     while (playlist.length) {
       playlist.splice(0, 1)
     }
-
+    self.repeat = false
     self.currentIndex = 0
   })
 }

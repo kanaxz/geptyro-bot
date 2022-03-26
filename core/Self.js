@@ -39,7 +39,7 @@ module.exports = class Self {
     const event = []
     this.events[eventName] = event
     if (!fn) {
-      fn = () => { }
+      fn = (arg) => arg
     }
     return (...initialArgs) => {
       return chain(event, (...finalArgs) => {

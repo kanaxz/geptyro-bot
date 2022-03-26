@@ -1,13 +1,13 @@
 
-module.exports = (self, { playlist, playlistMessage, commands, bot }) => {
-
+module.exports = (self, { musicBot, playlist, playlistMessage, commands, bot }) => {
+  const state = musicBot.state
   const isPaused = () => {
     return commands.status === 'paused'
   }
 
   const reactions = {
     '⏮️': {
-      check: playlist.canPrevious,
+      check: () => playlist.length > 1,
       execute: playlist.previous,
     },
     '⏹️': {
@@ -15,44 +15,53 @@ module.exports = (self, { playlist, playlistMessage, commands, bot }) => {
       execute: commands.stop,
     },
     '⏸️': {
-      check: () => !isPaused(),
-      execute: commands.pause,
-    },
-    '⏯️': {
-      check: isPaused,
-      execute: commands.unpause,
+      check: () => true,
+      execute: () => {
+        commands.setPause(!isPaused())
+      },
     },
     '⏭️': {
-      check: playlist.canNext,
+      check: () => playlist.length > 1,
       execute: playlist.next,
+    },
+    '🔇': {
+      check: () => true,
+      execute: () => {
+        commands.setMute(!commands.isMute)
+      }
+    },
+    '🔁': {
+      check: () => true,
+      execute: () => {
+        commands.setRepeat(!state.repeat)
+      }
     },
   }
 
-  const updateReactions = async (scopeStateMessage) => {
+  const addReactions = async (message) => {
     try {
-      await scopeStateMessage.reactions.removeAll()
+      await message.reactions.removeAll()
       for (const reactionName in reactions) {
-        if (reactions[reactionName].check()) {
-          await scopeStateMessage.react(reactionName)
-        }
+        await message.react(reactionName)
       }
     } catch (e) {
 
     }
   }
 
-  playlistMessage.after('update', async (scopePlaylistMessage) => {
-    if (!playlist.length) {
-      return
-    }
-    updateReactions(scopePlaylistMessage)
+  playlistMessage.after('create', async (message) => {
+    addReactions(message)
     const filter = (reaction, user) => {
-      return user.id !== bot.user.id && reactions[reaction.emoji.name]
+      if (user.id === bot.user.id) {
+        return
+      }
+      const reactionAction = reactions[reaction.emoji.name]
+      reaction.users.remove(user.id)
+      return reactionAction && reactionAction.execute()
     }
-    const collector = scopePlaylistMessage.createReactionCollector({ filter, time: 1000 * 60 * 5 });
+    const collector = message.createReactionCollector({ filter, time: 1000 * 60 * 5 });
     collector.on('collect', async (reaction, user) => {
-      await reactions[reaction.emoji.name].execute()
-      await updateReactions(scopePlaylistMessage)
+      await reactions[reaction.emoji.name].execute(reaction)
     })
   })
 }

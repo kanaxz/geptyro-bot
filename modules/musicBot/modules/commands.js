@@ -6,9 +6,17 @@ const { parseCommand } = require('../../../utils/command')
 const YOUTUBE_URL = 'https://www.youtube.com'
 
 
-module.exports = (self, { bot, playlist, youtube }) => {
-  let voiceConnection
+module.exports = (self, { musicBot, bot, playlist, youtube }) => {
   const audioPlayer = createAudioPlayer()
+  let audioResource
+  const state = musicBot.state
+  self.isMute = false
+  let startDate
+  let pauseDate
+  let pauseTime = 0
+  self.duration = 0
+
+  state.setDefault({ volume: 0.5, repeat: false })
 
   const playCurrent = self.event('playCurrent', async () => {
     const music = playlist.current()
@@ -17,48 +25,89 @@ module.exports = (self, { bot, playlist, youtube }) => {
     }
     console.log("playing", music)
     const stream = await ytdl(music.url, { filter: 'audioonly', highWaterMark: 1 << 25 });
-    const audioResource = createAudioResource(stream, { inlineVolume: true })
+    audioResource = createAudioResource(stream, { inlineVolume: true })
+    audioResource.volume.setVolume(state.volume)
     audioPlayer.play(audioResource)
+    startDate = new Date()
+    pauseDate = null
+    pauseTime = 0
+    self.duration = 0
     return music
   })
 
-
-
   self.getter('status', () => audioPlayer.state.status)
-  self.pause = () => audioPlayer.pause()
-  self.unpause = () => audioPlayer.unpause()
   const currentEnded = self.event('currentEnded', playlist.pop)
   audioPlayer.on('idle', currentEnded)
   playlist.before('change', playCurrent)
 
   self.stop = self.event('stop', async () => {
     playlist.reset()
-    if (voiceConnection) {
-      voiceConnection.disconnect()
-      voiceConnection.destroy()
-      voiceConnection = null
+    if (self.voiceConnection) {
+      self.voiceConnection.disconnect()
+      self.voiceConnection.destroy()
+      self.voiceConnection = null
     }
+    audioPlayer.stop(true)
   })
 
-  const musicsAdded = self.event('musicAdded')
+  self.setVolume = self.event('setVolume', (volume) => {
+    if (typeof (volume) === 'string') {
+      volume = parseFloat(volume)
+    }
+    if (volume > 5)
+      volume = 5
+
+    audioResource.volume.setVolume(volume)
+    state.volume = volume
+    state.save()
+  })
+
+  self.updateDuration = self.event('updateDuration', (duration) => {
+    self.duration = Math.floor(((pauseDate || new Date()) - startDate - pauseTime) / 1000)
+  })
+
+  setInterval(self.updateDuration, 1000 * 10)
+
+  self.setPause = self.event('setPause', (isPaused) => {
+    if (isPaused)
+      pauseDate = new Date()
+    else {
+      pauseTime += new Date() - pauseDate
+      pauseDate = null
+    }
+    audioPlayer[isPaused && 'pause' || 'unpause']()
+  })
+
+  self.setRepeat = self.event('setRepeat', (repeat) => {
+    state.repeat = repeat
+    state.save()
+  })
+
+  self.setMute = self.event('setMute', (isMute) => {
+    self.isMute = isMute
+    audioResource.volume.setVolume(!self.isMute && state.volume || 0)
+  })
+
+  const musicsAdded = self.event('musicsAdded')
 
   const joinChannel = async (voiceChannel) => {
-    if (voiceConnection) {
-      if (voiceConnection.joinConfig.channelId === voiceChannel.id) {
+    if (self.voiceConnection) {
+      if (self.voiceConnection.joinConfig.channelId === voiceChannel.id) {
         return
       }
       await stop()
     }
 
-    voiceConnection = joinVoiceChannel({
+    self.voiceConnection = joinVoiceChannel({
       channelId: voiceChannel.id,
       guildId: voiceChannel.guild.id,
       adapterCreator: voiceChannel.guild.voiceAdapterCreator,
     })
 
-    voiceConnection.subscribe(audioPlayer)
+    self.voiceConnection.subscribe(audioPlayer)
   }
 
+  const part = ['id', 'snippet', 'contentDetails']
 
 
   const processPlayArgs = async (msg, query, handlePlaylist) => {
@@ -73,35 +122,35 @@ module.exports = (self, { bot, playlist, youtube }) => {
         return
       }
       const { data: { items: [video] } } = await youtube.videos.list({
-        part: ['id', 'snippet'],
+        part,
         id: videoId
       })
       if (!video)
         return
-      addVideo({ id: videoId, title: video.snippet.title }, msg.author)
-
+      addVideo(videoId, video, msg.author)
+      console.log(video)
       const list = url.searchParams.get('list')
       if (handlePlaylist && list && list !== 'LL') {
         const result = await youtube.playlistItems.list({
-          part: ['id', 'snippet'],
+          part,
           playlistId: list,
           maxResults: 6
         })
         result.data.items.shift()
         for (const video of result.data.items) {
-          addVideo({ title: video.snippet.title, id: video.snippet.resourceId.videoId }, msg.author)
+          addVideo(video.snippet.resourceId.videoId, video, msg.author)
         }
       }
     } else {
       const { data: { items: [video] } } = await youtube.search.list({
-        part: ['id', 'snippet'],
+        part,
         maxResults: 1,
         type: ['video'],
         q: query
       })
       if (!video)
         return
-      addVideo({ id: video.id.videoId, title: video.snippet.title }, msg.author)
+      addVideo(video.id.videoId, video, msg.author)
     }
     musicsAdded()
     await joinChannel(voiceChannel)
@@ -116,17 +165,22 @@ module.exports = (self, { bot, playlist, youtube }) => {
     },
     playlist: async (msg, ...args) => {
       await processPlayArgs(msg, ...args, true)
+    },
+    volume: async (msg, volume) => {
+      self.setVolume(volume)
+      await msg.delete()
     }
   }
 
-  const addVideo = (video, author) => {
-    if (!video || video.title === 'Deleted video')
+  const addVideo = (id, video, author) => {
+    if (!id || video.snippet.title === 'Deleted video')
       return
-
     playlist.push({
       username: author.username,
-      url: `${YOUTUBE_URL}/watch?v=${video.id}`,
-      name: video.title
+      url: `${YOUTUBE_URL}/watch?v=${id}`,
+      name: video.snippet.title,
+      thumbnail: video.snippet.thumbnails.high.url,
+      duration: video.contentDetails.duration.replace('PT', '').replace('M', ':').replace('S', '')
     })
   }
 
