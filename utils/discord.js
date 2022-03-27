@@ -9,6 +9,28 @@ const deleteAllMessagesOfChannel = async (channel) => {
   } while (messages.length)
 }
 
+const buildEmbedMessageFields = (array, fields) => {
+  return fields.map((fieldName) => {
+    return {
+      name: fieldName,
+      value: array.map((item) => item[fieldName]).join('\n'),
+      inline: true,
+    }
+  })
+}
+
+const tryDeleteMessage = (msg) => {
+  setTimeout(async () => {
+    try {
+      await msg.delete()
+    } catch (e) {
+
+    }
+  }, 1000)
+}
+
 module.exports = {
   deleteAllMessagesOfChannel,
+  buildEmbedMessageFields,
+  tryDeleteMessage,
 }

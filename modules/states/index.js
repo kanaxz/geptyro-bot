@@ -1,6 +1,6 @@
 const State = require('./State')
 module.exports = ({ mongo }) => {
-  const collection = mongo.collection('state')
+  const collection = mongo.collection('states')
   const get = async (moduleName) => {
     let state = await collection.findOne({
       moduleName

@@ -2,12 +2,11 @@ const ytdl = require('ytdl-core-discord')
 const { joinVoiceChannel, createAudioPlayer, getVoiceConnection, createAudioResource, } = require('@discordjs/voice')
 const Timer = require('../Timer')
 
-module.exports = (self, { musicBot, bot, playlist, youtube }) => {
+module.exports = (self, { musicBot, playlist }) => {
   const audioPlayer = createAudioPlayer()
   const state = musicBot.state
   let audioResource
   self.timer = new Timer()
-  self.duration = 0
   self.isMute = false
 
   state.setDefault({ volume: 0.5, repeat: false })
@@ -17,8 +16,6 @@ module.exports = (self, { musicBot, bot, playlist, youtube }) => {
 
   self.getter('status', () => audioPlayer.state.status)
 
-  audioPlayer.on('idle', currentEnded)
-  playlist.before('change', self.playCurrent)
 
   self.joinChannel = async (voiceChannel) => {
     if (self.voiceConnection) {
@@ -62,6 +59,10 @@ module.exports = (self, { musicBot, bot, playlist, youtube }) => {
     audioPlayer.stop(true)
   })
 
+  const updateVolume = () => {
+    audioResource.volume.setVolume(!self.isMute && state.volume || 0)
+  }
+
   self.setVolume = (volume) => {
     if (typeof (volume) === 'string') {
       volume = parseFloat(volume)
@@ -70,8 +71,8 @@ module.exports = (self, { musicBot, bot, playlist, youtube }) => {
     if (volume > 5)
       volume = 5
 
-    audioResource.volume.setVolume(volume)
     state.volume = volume
+    updateVolume()
     changed()
   }
 
@@ -92,7 +93,11 @@ module.exports = (self, { musicBot, bot, playlist, youtube }) => {
 
   self.setMute = (isMute) => {
     self.isMute = isMute
-    audioResource.volume.setVolume(!self.isMute && state.volume || 0)
+    updateVolume()
     changed()
   }
+
+
+  audioPlayer.on('idle', currentEnded)
+  playlist.before('change', self.playCurrent)
 }

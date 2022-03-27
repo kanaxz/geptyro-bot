@@ -1,5 +1,4 @@
 const { MessageEmbed } = require('discord.js')
-const { ellipse } = require('../../../utils/string')
 
 const durationToString = (duration) => {
   let modulo = (duration % 60).toString()
@@ -15,6 +14,23 @@ module.exports = (self, { player, musicBot, playlist, commands }) => {
   const state = musicBot.state
 
   const create = self.event('create')
+
+  const deleteStateMessage = async () => {
+    if (!state.playlistMessageId)
+      return
+    try {
+      const message = await musicBot.musicChannel.messages.fetch(state.playlistMessageId)
+      if (!message)
+        return
+      message.delete()
+      delete state.playlistMessageId
+      state.save()
+    } catch (e) {
+
+    }
+  }
+
+  deleteStateMessage()
 
   const updatePlaylistMessage = async () => {
     if (playlistMessage && shouldResend) {
@@ -57,6 +73,8 @@ module.exports = (self, { player, musicBot, playlist, commands }) => {
       await playlistMessage.edit({ embeds: [embed] })
     } else {
       playlistMessage = await musicBot.musicChannel.send({ embeds: [embed] })
+      state.playlistMessageId = playlistMessage.id
+      state.save()
       create(playlistMessage)
     }
 
@@ -81,8 +99,8 @@ module.exports = (self, { player, musicBot, playlist, commands }) => {
     if (!music || state.repeat) return
     shouldResend = true
     await musicBot.musicChannel.send(`Played ${music.url} by ${music.username}`)
-
   })
+
   player.before('stop', async () => {
     if (playlistMessage) {
       playlistMessage.delete()
