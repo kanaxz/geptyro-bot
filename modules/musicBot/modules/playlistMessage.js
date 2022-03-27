@@ -9,10 +9,10 @@ const durationToString = (duration) => {
   return `${Math.floor(duration / 60)}:${modulo}`
 }
 
-module.exports = (self, { musicBot, playlist, commands }) => {
+module.exports = (self, { player, musicBot, playlist, commands }) => {
   let playlistMessage
-  const state = musicBot.state
   let shouldResend = false
+  const state = musicBot.state
 
   const create = self.event('create')
 
@@ -47,7 +47,8 @@ module.exports = (self, { musicBot, playlist, commands }) => {
       })
 
       embed.addFields([...fields])
-        .setTitle(`Playlist ${' '.repeat(40)}  ${durationToString(commands.duration)} / ${currentMusic.duration} ${' '.repeat(30)} ${commands.isMute && '🔇' || `${state.volume}   🔊`}    ${state.repeat && '🔁' || ''} ${commands.status === 'paused' && '⏸️' || ''}`)
+        .setTitle(`Playlist ${' '.repeat(40)}  ${durationToString(player.timer.duration())} / ${currentMusic.duration} ${' '.repeat(30)} ${player.isMute && '🔇' || `${state.volume}   🔊`}  ${state.repeat && '🔁' || ''}  ${player.status === 'paused' && '⏸️' || ''}`)
+      //.setImage(currentMusic.thumbnail)
     } else {
       embed.setDescription('No tracks')
     }
@@ -63,26 +64,26 @@ module.exports = (self, { musicBot, playlist, commands }) => {
   }
 
   playlist.after('finish', updatePlaylistMessage)
-  commands.before('playCurrent', updatePlaylistMessage)
+
   commands.after('musicsAdded', () => {
     // if idle, playCurrent will be triggered    
-    if (commands.status === 'idle')
+    if (player.status === 'idle')
       return
     updatePlaylistMessage()
   })
 
-  commands.after('setMute', updatePlaylistMessage)
-  commands.after('setVolume', updatePlaylistMessage)
-  commands.after('setPause', updatePlaylistMessage)
-  commands.after('setRepeat', updatePlaylistMessage)
-  commands.after('updateDuration', updatePlaylistMessage)
-  commands.after('currentEnded', async (music) => {
+  player.before('playCurrent', updatePlaylistMessage)
+  player.after('changed', updatePlaylistMessage)
+
+  setInterval(updatePlaylistMessage, 1000 * 10)
+
+  player.after('currentEnded', async (music) => {
     if (!music || state.repeat) return
     shouldResend = true
     await musicBot.musicChannel.send(`Played ${music.url} by ${music.username}`)
 
   })
-  commands.before('stop', async () => {
+  player.before('stop', async () => {
     if (playlistMessage) {
       playlistMessage.delete()
       playlistMessage = null

@@ -1,8 +1,9 @@
 
-module.exports = (self, { musicBot, playlist, playlistMessage, commands, bot }) => {
+module.exports = ({ player, musicBot, playlist, playlistMessage, bot }) => {
   const state = musicBot.state
+
   const isPaused = () => {
-    return commands.status === 'paused'
+    return player.status === 'paused'
   }
 
   const reactions = {
@@ -12,12 +13,12 @@ module.exports = (self, { musicBot, playlist, playlistMessage, commands, bot }) 
     },
     '⏹️': {
       check: () => true,
-      execute: commands.stop,
+      execute: player.stop,
     },
     '⏸️': {
       check: () => true,
       execute: () => {
-        commands.setPause(!isPaused())
+        player.setPause(!isPaused())
       },
     },
     '⏭️': {
@@ -27,13 +28,13 @@ module.exports = (self, { musicBot, playlist, playlistMessage, commands, bot }) 
     '🔇': {
       check: () => true,
       execute: () => {
-        commands.setMute(!commands.isMute)
+        player.setMute(!player.isMute)
       }
     },
     '🔁': {
       check: () => true,
       execute: () => {
-        commands.setRepeat(!state.repeat)
+        player.setRepeat(!state.repeat)
       }
     },
   }
@@ -59,7 +60,7 @@ module.exports = (self, { musicBot, playlist, playlistMessage, commands, bot }) 
       reaction.users.remove(user.id)
       return reactionAction && reactionAction.execute()
     }
-    const collector = message.createReactionCollector({ filter, time: 1000 * 60 * 5 });
+    const collector = message.createReactionCollector({ filter, time: 1000 * 60 * 60 * 5 })
     collector.on('collect', async (reaction, user) => {
       await reactions[reaction.emoji.name].execute(reaction)
     })

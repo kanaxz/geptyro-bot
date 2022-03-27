@@ -6,9 +6,7 @@ const global = new Module({
   path: __dirname,
   level: 0,
   isDirectory: true,
-  modulation: {
-    initFunction: () => { }
-  }
+  initFunction: () => { }
 })
 
 const start = async () => {

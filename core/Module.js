@@ -1,13 +1,13 @@
 const Self = require('./Self')
 const fs = require('fs');
 const { getParamNames } = require('../utils/meta');
-const Modulation = require('./Modulation')
 
 module.exports = class Module {
 
   constructor(values) {
     this.isInitialized = false
-    this.self = new Self()
+    this.modules = {}
+    this.self = new Self(this)
     for (const p in values)
       this[p] = values[p]
   }
@@ -34,7 +34,7 @@ module.exports = class Module {
     if (this.isInitialized) {
       return
     }
-    let paramNames = getParamNames(this.modulation.initFunction)
+    let paramNames = getParamNames(this.initFunction)
     let dependenciesNames
     let addSelfArg = true
     if (paramNames.length === 2) {
@@ -57,12 +57,11 @@ module.exports = class Module {
     const dependencies = {}
     for (const dependencyName of dependenciesNames) {
       const dependency = this.findModule(dependencyName)
-      dependencies[dependency.name] = await dependency.modulation.getAsDependency(this)
+      dependencies[dependency.name] = await dependency.self
     }
 
-
     const args = [addSelfArg && this.self, dependencies].filter(arg => arg)
-    const newSelf = await this.modulation.initFunction(...args)
+    const newSelf = await this.initFunction(...args)
     if (newSelf) {
       this.self = newSelf
     }
@@ -77,7 +76,6 @@ module.exports = class Module {
     if (!this.isDirectory) {
       return
     }
-    this.modules = {}
     const modulesPath = `${this.path}/modules`
     if (!fs.existsSync(modulesPath)) {
       return
@@ -104,12 +102,7 @@ module.exports = class Module {
       }
 
       this.modules[module.name] = module
-      let modulation = require(module.path)
-      if (!(modulation instanceof Modulation)) {
-        modulation = new Modulation(modulation)
-      }
-      module.modulation = modulation
-      module.modulation.module = module
+      module.initFunction = require(module.path)
     }
 
     for (const moduleName in this.modules) {

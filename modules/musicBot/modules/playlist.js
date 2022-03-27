@@ -13,23 +13,15 @@ module.exports = (self, { musicBot }) => {
   const finish = self.event('finish')
 
   self.next = self.event('next', () => {
-
     self.currentIndex++
-    // should only happen if repeat = true
     if (self.currentIndex >= playlist.length) {
       self.currentIndex = 0
     }
-
     change(self.current())
   })
 
   self.previous = self.event('previous', () => {
-    if (!self.canPrevious()) {
-      throw new Error('Cannot go previous')
-    }
     self.currentIndex--
-    // should only happen if repeat = true
-
     if (self.currentIndex < 0) {
       self.currentIndex = playlist.length - 1
     }
@@ -40,13 +32,14 @@ module.exports = (self, { musicBot }) => {
     return playlist[self.currentIndex]
   }
 
-  self.pop = () => {
-    const current = self.current()
-    if (state.repeat) {
-      self.next()
-      return current
-    }
-    playlist.splice(self.currentIndex, 1)
+  self.removeAtIndex = (index) => {
+    console.log(index)
+    if (index > playlist.length - 1 || index < 0)
+      throw new Error()
+    const music = playlist[index]
+    playlist.splice(index, 1)
+    if (index < self.currentIndex)
+      self.currentIndex--
     if (self.currentIndex >= playlist.length && playlist.length) {
       self.currentIndex--
     }
@@ -55,7 +48,16 @@ module.exports = (self, { musicBot }) => {
     } else {
       finish()
     }
-    return current
+    return music
+  }
+
+  self.pop = () => {
+    if (state.repeat) {
+      const current = self.current()
+      self.next()
+      return current
+    }
+    return self.removeAtIndex(self.currentIndex)
   }
 
   self.reset = self.event('reset', () => {
@@ -66,8 +68,3 @@ module.exports = (self, { musicBot }) => {
     self.currentIndex = 0
   })
 }
-
-
-
-
-

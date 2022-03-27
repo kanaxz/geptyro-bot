@@ -13,8 +13,9 @@ const chain = (array, end, initialArgs) => {
 
 module.exports = class Self {
 
-  constructor() {
+  constructor(module) {
     this.events = {}
+    this.module = module
   }
 
   getter(propertyName, get) {
@@ -42,9 +43,7 @@ module.exports = class Self {
       fn = (arg) => arg
     }
     return (...initialArgs) => {
-      return chain(event, (...finalArgs) => {
-        return fn(...finalArgs)
-      }, initialArgs)
+      return chain(event, fn, initialArgs)
     }
   }
 
