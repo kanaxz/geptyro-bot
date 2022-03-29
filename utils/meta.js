@@ -12,7 +12,6 @@ const getParamNames = (func) => {
   if (result === null)
     result = [];
   let structured
-  //console.log(result)
   for (let i = 0; i < result.length; i++) {
     const argName = result[i]
     if (argName === '{') {

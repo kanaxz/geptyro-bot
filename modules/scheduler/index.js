@@ -42,17 +42,18 @@ module.exports = async ({ states }) => {
     }
     let currentDate = now.clone()
     do {
-      let dayTimer = timer[currentDate.format('dddd').toLocaleLowerCase()]
-      if (!dayTimer)
-        continue
-      dayTimer = dayTimer.sort((a, b) => b - a)
-      for (const hour of dayTimer) {
-        currentDate.set('hour', hour)
-        if (currentDate.toDate() < now.toDate())
-          return currentDate.toDate()
-      }
-      currentDate = currentDate.add(-1, 'days')
 
+      let dayTimer = timer[currentDate.format('dddd').toLocaleLowerCase()]
+      if (dayTimer) {
+        dayTimer = dayTimer.sort((a, b) => b - a)
+        for (const hour of dayTimer) {
+          currentDate.set('hour', hour)
+          if (currentDate.toDate() < now.toDate())
+            return currentDate.toDate()
+        }
+      }
+
+      currentDate = currentDate.add(-1, 'days')
     } while (currentDate.weekday() !== now.weekday())
     throw new Error('Could not find last date')
   }

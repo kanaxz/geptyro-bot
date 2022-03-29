@@ -4,18 +4,7 @@ const { buildEmbedMessageFields } = require('../../../utils/discord')
 const { tryDeleteMessage } = require('../../../utils/discord')
 const moment = require('moment')
 
-const indexes = ['🔴', '🟡', '🔵', '🟢', '🟣', '🟠', '🟤', '⚫', '⚪', '🟥', '🟨', '🟦', '🟩', '🟪', '🟧', '🟫', '⬛', '⬜']
-
 const PROGRAM = 'tvshow'
-
-const calendarFormatting = {
-  lastDay: '[Yesterday]',
-  sameDay: '[Today]',
-  nextDay: '[Tomorrow]',
-  lastWeek: '[last] dddd',
-  nextWeek: 'dddd',
-  sameElse: 'L'
-}
 
 const parseIndex = (index, max) => {
   index = parseInt(index)
@@ -56,11 +45,11 @@ const display = (init) => {
 
     let error
     const tasks = []
-
+    let taskResult
     const executeTask = (task) => {
       setTimeout(async () => {
         try {
-          await task()
+          taskResult = await task()
         } catch (e) {
           error = e
           console.error(e)
@@ -81,9 +70,10 @@ const display = (init) => {
       const embed = new MessageEmbed()
       embed.setTitle(self.title)
       let display = {
+        taskResult,
         embeds: [embed],
         reactions: {
-          '🔁': async () => {
+          '🔄': async () => {
             error = null
             for (const task of tasks) {
               executeTask(task)
@@ -163,7 +153,11 @@ module.exports = ({ tvshows, bot, imdb, piratebay, tinyUrl }) => {
 
         let messageHandler
         const seasons = await tvshows.loadSeasons(serie)
-        const fields = buildEmbedMessageFields(seasons, ['index', 'date', 'count'])
+        const fields = buildEmbedMessageFields(seasons.map((season, index) => ({
+          index: index + 1,
+          date: season.date,
+          episodes: season.episodes.length,
+        })))
         embed.addFields(fields)
 
         messageHandler = getElement(seasons, (season) => {
@@ -184,8 +178,12 @@ module.exports = ({ tvshows, bot, imdb, piratebay, tinyUrl }) => {
     async season(navigation, season) {
       const embed = new MessageEmbed()
 
-      embed.setTitle(season.fullTitle)
-      const fields = buildEmbedMessageFields(season.episodes, ['index', 'title', 'released'])
+      embed.setTitle(season.getFullPath())
+      const fields = buildEmbedMessageFields(season.episodes.map((episode, index) => ({
+        index: index + 1,
+        title: episode.title,
+        date: episode.releasedBeautified,
+      })))
       embed.addFields(fields)
 
       const messageHandler = getElement(season.episodes, (episode) => {
@@ -200,10 +198,10 @@ module.exports = ({ tvshows, bot, imdb, piratebay, tinyUrl }) => {
     async episode(navigation, episode) {
       const embed = new MessageEmbed()
 
-      embed.setTitle(`${episode.fullTitle} ${episode.title}`)
+      embed.setTitle(`${episode.season.getFullPath()} ${episode.title}`)
       embed.setDescription(episode.plot)
       let torrents = await piratebay.getTorrents({
-        q: episode.fullTitle,
+        q: episode.getFullPath(),
         cat: piratebay.categories.video,
       })
       torrents = torrents.sort((a, b) => b.seeds - a.seeds).slice(0, 10)
@@ -217,7 +215,7 @@ module.exports = ({ tvshows, bot, imdb, piratebay, tinyUrl }) => {
 
       const messageHandler = getElement(torrents, async (torrent, msg) => {
         const tiny = await tinyUrl.create(torrent.magnet)
-        const torrentMessage = await msg.author.send(`${torrent.name} ${tiny.tiny_url}`)
+        await msg.author.send(`${torrent.name} ${tiny.tiny_url}`)
       })
 
       return {
@@ -239,31 +237,29 @@ module.exports = ({ tvshows, bot, imdb, piratebay, tinyUrl }) => {
         navigation.navigate(displays.serie(navigation, serie))
       })
 
-
       return {
         embed,
-        messageHandler
+        messageHandler,
       }
     },
-    episodes: display(function (navigation, startDate, endDate) {
+    episodes: display(function (navigation, startDate, endDate, preventNavigation) {
       let episodes
       startDate = startDate.startOf('day')
       endDate = endDate.endOf('day')
-      console.log(startDate, endDate)
-      console.log(startDate.toDate(), endDate.toDate())
       this.title = `Episodes from ${formatDateDay(startDate)}`
       if (!startDate.isSame(endDate, 'days')) {
         this.title += ` to ${formatDateDay(endDate)}`
       }
+
       this.task(async () => {
         episodes = null
-        episodes = await tvshows.episodes({
+        episodes = await tvshows.getEpisodes({
           released: {
-            $gt: startDate.toDate(),
-            $lt: endDate.toDate()
+            $gte: startDate.toDate(),
+            $lte: endDate.toDate()
           }
         })
-        console.log(episodes)
+        return episodes
       })
 
       return (mainEmbed) => {
@@ -273,8 +269,10 @@ module.exports = ({ tvshows, bot, imdb, piratebay, tinyUrl }) => {
         if (!episodes.length)
           return mainEmbed.setDescription('No results')
 
+        mainEmbed.setDescription(`${startDate.format('DD/MM/YYYY')} - ${endDate.format('DD/MM/YYYY')}`)
+
         const days = episodes.reduce((days, episode) => {
-          let day = days.find((d) => d.date === episode.released)
+          let day = days.find((d) => d.date.getTime() === episode.released.getTime())
           if (!day) {
             day = {
               date: episode.released,
@@ -288,29 +286,40 @@ module.exports = ({ tvshows, bot, imdb, piratebay, tinyUrl }) => {
         let index = 0
         const embeds = days.map((day) => {
           const embed = new MessageEmbed()
-          embed.setTitle(formatDateDay(moment.utc(day.date)))
+          const date = moment.utc(day.date)
+          embed.setTitle(formatDateDay(date))
           const fields = buildEmbedMessageFields(day.episodes.map((episode) => ({
             index: ++index,
-            title: episode.fullTitle,
+            title: episode.getFullPath(),
           })))
+          embed.setDescription(date.format('DD/MM/YYYY'))
           embed.addFields(fields)
           return embed
         })
 
-        const messageHandler = getElement(episodes, (episode) => {
-          navigation.navigate(displays.episode(navigation, episode))
-        })
+        let messageHandler
+        if (!preventNavigation) {
+          messageHandler = getElement(episodes, (episode) => {
+            navigation.navigate(displays.episode(navigation, episode))
+          })
+        }
+
+        const reactions = {}
+        if (preventNavigation) {
+          reactions['🔒'] = () => { }
+        }
 
         return {
           embeds,
-          messageHandler
+          messageHandler,
+          reactions,
         }
       }
     }),
   }
 
   const episodesCommand = (daysToAdd) => {
-    return async (channel, index) => {
+    return async (channel, index, preventNavigation) => {
       const navigationMessage = new NavigationMessage(bot)
       let startDate = moment.utc(moment())
       index = parseInt(index)
@@ -318,9 +327,9 @@ module.exports = ({ tvshows, bot, imdb, piratebay, tinyUrl }) => {
         startDate = startDate.add(index, 'days')
       }
       const endDate = startDate.clone().add(daysToAdd, 'days')
-      console.log(startDate, endDate)
-      const display = await displays.episodes(navigationMessage, startDate, endDate)
+      const display = await displays.episodes(navigationMessage, startDate, endDate, preventNavigation)
       await navigationMessage.start(channel, display)
+      return await display.taskResult
     }
   }
 
@@ -336,6 +345,7 @@ module.exports = ({ tvshows, bot, imdb, piratebay, tinyUrl }) => {
       const display = await displays.list(navigationMessage)
       await navigationMessage.start(channel, display)
     },
+    month: episodesCommand(31),
     week: episodesCommand(7),
     day: episodesCommand(0)
   }

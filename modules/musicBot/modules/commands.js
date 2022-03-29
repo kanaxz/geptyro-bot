@@ -1,6 +1,5 @@
 const { parseCommand } = require('../../../utils/command')
 
-const YOUTUBE_URL = 'https://www.youtube.com'
 
 module.exports = (self, { player, bot, playlist, youtube }) => {
 
@@ -21,7 +20,7 @@ module.exports = (self, { player, bot, playlist, youtube }) => {
     const voiceChannel = msg.member.voice?.channel
     if (!voiceChannel)
       return
-    if (query.startsWith(YOUTUBE_URL)) {
+    if (query.startsWith(youtube.url)) {
       const url = new URL(query)
 
       const videoId = url.searchParams.get('v')
@@ -32,7 +31,7 @@ module.exports = (self, { player, bot, playlist, youtube }) => {
         return
       const list = url.searchParams.get('list')
       if (handlePlaylist && list && list !== 'LL') {
-        const result = await youtube.playlistItems.list({
+        const result = await youtube.api.playlistItems.list({
           part,
           playlistId: list,
           maxResults: 6
@@ -43,7 +42,7 @@ module.exports = (self, { player, bot, playlist, youtube }) => {
         }
       }
     } else {
-      const { data: { items: [video] } } = await youtube.search.list({
+      const { data: { items: [video] } } = await youtube.api.search.list({
         part: ['id'],
         maxResults: 1,
         type: ['video'],
@@ -89,7 +88,7 @@ module.exports = (self, { player, bot, playlist, youtube }) => {
       return
     const music = {
       username: author.username,
-      url: `${YOUTUBE_URL}/watch?v=${id}`,
+      url: youtube.buildUrl(id),
       name: video.snippet.title,
       thumbnail: video.snippet.thumbnails.high.url,
       duration: video.contentDetails.duration.replace('PT', '').replace('M', ':').replace('S', '')

@@ -1,13 +1,14 @@
 
-module.exports = ({ tvshows, scheduler, commands }) => {
-  scheduler.addJob('tvshows:week', { 'all': [3, 8] }, async () => {
-    console.log("here please")
-    await commands.week(tvshows.channel, 0)
+module.exports = ({ tvshows, scheduler, commands, youtube }) => {
+
+  scheduler.addJob('tvshows:week', { 'monday': [8] }, async () => {
+    await commands.week(tvshows.channel, 0, true)
   })
 
   scheduler.addJob('tvshows:update', { 'all': [8] }, async () => {
-    console.log("here please")
-    await tvshows.collection.find({}).forEach(async (serie) => {
+    const cursor = await tvshows.collection.find({})
+    while (await cursor.hasNext()) {
+      const serie = await cursor.next()
       serie.seasons = null
       await tvshows.loadSeasons(serie)
       await tvshows.collection.update({
@@ -15,6 +16,24 @@ module.exports = ({ tvshows, scheduler, commands }) => {
       }, {
         $set: serie
       })
-    })
+    }
+  })
+  /**/
+
+
+  scheduler.addJob('tvshows:day', { 'all': [8, 20] }, async () => {
+    const episodes = await commands.day(tvshows.channel, 0, true)
+    for (const episode of episodes) {
+      if (episode.number !== 1)
+        continue
+
+      const { data: { items: [video] } } = await youtube.api.search.list({
+        part: ['id'],
+        maxResults: 1,
+        type: ['video'],
+        q: `${episode.season.fullTitle} official trailer`
+      })
+      await tvshows.channel.send(youtube.buildUrl(video.id.videoId))
+    }
   })
 }

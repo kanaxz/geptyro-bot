@@ -3,7 +3,6 @@ const axios = require('axios')
 module.exports = async ({ config }) => {
   let keyIndex = 0
   const request = async (type, action, arg) => {
-    console.log(config.imdbApiKeys[keyIndex])
     const url = `https://imdb-api.com/en/API/${action}/${config.imdbApiKeys[keyIndex]}/${arg || ''}`
 
     const result = await axios[type](url)

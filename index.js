@@ -13,6 +13,7 @@ const start = async () => {
   try {
     await global.init()
     //global.printTree()
+    console.log("__ready__")
   } catch (e) {
     console.error(e)
     process.exit()

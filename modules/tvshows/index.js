@@ -11,10 +11,110 @@ const doubleDigit = (number) => {
 
 const parseDate = (date) => {
   const split = date.split(' ')
-  console.log(date)
   if (split.length !== 3)
     return null
   return moment.utc(`${split[0]}/${months.indexOf(split[1].replace('.', '')) + 1}/${split[2]}`, 'DD/MM/YYYY').toDate()
+}
+
+const schemas = {
+  episode: {
+    methods: {
+      getFullPath() {
+        return `${this.season.getFullPath()}E${doubleDigit(this.number)}`
+      }
+    }
+  },
+  season: {
+    methods: {
+      getFullPath() {
+        return `${this.serie.title} S${doubleDigit(this.number)}`
+      }
+    },
+    properties: {
+      episodes: {
+        type: 'array',
+        with: 'episode',
+        on: 'season'
+      }
+    }
+  },
+  serie: {
+    properties: {
+      seasons: {
+        type: 'array',
+        with: 'season',
+        on: 'serie'
+      }
+    }
+  }
+}
+
+class Model {
+  constructor(values) {
+    for (const p in values)
+      this[p] = values[p]
+  }
+}
+
+for (const schemaName in schemas) {
+  schema = schemas[schemaName]
+  let methods = schema.methods
+  if (!methods)
+    methods = {}
+  const classContainer = {
+    [schemaName]: class extends Model { }
+  }
+  const prototype = classContainer[schemaName]
+  for (const methodName in methods) {
+    prototype.prototype[methodName] = methods[methodName]
+  }
+
+  schema.class = prototype
+}
+
+const Types = {
+  array: {
+    hydrate(instance, property, value) {
+      return value.map((sub) => {
+        const subInstance = hydrate(property.with, {
+          ...sub,
+          [property.on]: instance
+        })
+        return subInstance
+      })
+    },
+    dehydrate(clone, property, value) {
+      return value.map((sub) => {
+        const clone = dehydrate(property.with, sub)
+        delete clone[property.on]
+        return clone
+      })
+    }
+  }
+}
+
+const hydrate = (schemaName, object) => {
+
+  const schema = schemas[schemaName]
+  const instance = new schema.class(object)
+  for (const propertyName in schema.properties) {
+    const property = schema.properties[propertyName]
+    const value = instance[propertyName]
+    instance[propertyName] = Types[property.type].hydrate(instance, property, value)
+  }
+  return instance
+}
+
+
+const dehydrate = (schemaName, object) => {
+  const schema = schemas[schemaName]
+  const clone = { ...object }
+  for (const propertyName in schema) {
+    const property = schema[propertyName]
+    const value = clone[propertyName]
+    clone[propertyName] = Types[property.type].dehydrate(clone, property, value)
+  }
+  return clone
 }
 
 module.exports = async ({ mongo, imdb, bot }) => {
@@ -51,12 +151,13 @@ module.exports = async ({ mongo, imdb, bot }) => {
         _id: serie._id
       })
       serie._id = null
+    } else if (serie.userIds.length > 1) {
+      await collection.updateOne({
+        _id: serie._id,
+      }, {
+        $set: dehydrate('serie', serie)
+      })
     }
-  }
-
-  const getSeries = async () => {
-    const series = await collection.find().toArray()
-    return series
   }
 
   const search = async (title) => {
@@ -66,11 +167,11 @@ module.exports = async ({ mongo, imdb, bot }) => {
         $in: series.map((s) => s.id)
       }
     }).toArray()
-
     series = series.map((serie) => {
       const dbSerie = dbSeries.find((s) => s.imdbId === serie.id)
       if (dbSerie)
         return dbSerie
+
       return imdbToDb(serie)
     })
     return series
@@ -87,18 +188,20 @@ module.exports = async ({ mongo, imdb, bot }) => {
       for (const seasonNumber of serieDetails.tvSeriesInfo.seasons) {
         const seasonDetails = await imdb.get('SeasonEpisodes', `${serie.imdbId}/${seasonNumber}`)
         const season = {
-          index: seasonNumber,
-          fullTitle: `${serie.title} S${doubleDigit(seasonNumber)}`,
+          number: parseInt(seasonNumber),
           date: seasonDetails.episodes[0].released,
-          count: seasonDetails.episodes.length,
-          episodes: seasonDetails.episodes,
+          episodes: seasonDetails.episodes.map((episode) => {
+            const newEpisode = {
+              ...episode,
+              releasedBeautified: episode.released,
+              released: parseDate(episode.released),
+              number: parseInt(episode.episodeNumber),
+            }
+            for (const p of ['seasonNupmber', 'episodeNumber', 'year', 'episodeNumber'])
+              delete newEpisode[p]
+            return newEpisode
+          }),
         }
-        seasonDetails.episodes.forEach((episode) => {
-          episode.index = episode.episodeNumber
-          episode.releasedBeautified = episode.released
-          episode.released = parseDate(episode.released)
-          episode.fullTitle = `${season.fullTitle}E${doubleDigit(episode.episodeNumber)}`
-        })
 
         seasons.push(season)
       }
@@ -114,6 +217,12 @@ module.exports = async ({ mongo, imdb, bot }) => {
     },
     lt(value1, value2) {
       return value1 < value2
+    },
+    lte(value1, value2) {
+      return value1 <= value2
+    },
+    gte(value1, value2) {
+      return value1 >= value2
     },
     eq(value1, value2) {
       return value1 == value2
@@ -137,9 +246,14 @@ module.exports = async ({ mongo, imdb, bot }) => {
     return true
   }
 
-  const episodes = async (filters) => {
-    console.log(filters)
-    const series = await collection.find({
+  const getSeries = async (filters) => {
+    const series = await collection.find(filters).toArray()
+    return series.map((serie) => hydrate('serie', serie))
+  }
+
+  const getEpisodes = async (filters) => {
+
+    const series = await getSeries({
       seasons: {
         $elemMatch: {
           episodes: {
@@ -147,8 +261,7 @@ module.exports = async ({ mongo, imdb, bot }) => {
           }
         }
       }
-    }).toArray()
-
+    })
     return series
       .reduce((acc, serie) => {
         for (const season of serie.seasons) {
@@ -170,7 +283,7 @@ module.exports = async ({ mongo, imdb, bot }) => {
     toggleTrackSerie,
     getSeries,
     search,
-    episodes,
+    getEpisodes,
     channel,
   }
 }
