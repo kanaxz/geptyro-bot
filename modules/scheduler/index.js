@@ -30,7 +30,7 @@ module.exports = async ({ states }) => {
       error: error && error.message
     }
 
-    state.save()
+    await state.save()
   }
 
   const getLastDate = (timer) => {
@@ -64,17 +64,17 @@ module.exports = async ({ states }) => {
     return !lastExecution || lastDate > lastExecution.date
   }
 
-  const jobsLoop = () => {
+  const jobsLoop = async () => {
     for (const job of jobs) {
       if (shouldExecuteJob(job)) {
-        executeJob(job)
+        await executeJob(job)
       }
     }
   }
 
   const start = () => {
     jobsLoop()
-    setInterval(jobsLoop, 1000 * 60 * 60)
+    setInterval(jobsLoop, 1000 * 60 * 10)
   }
 
 

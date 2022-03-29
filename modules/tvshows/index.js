@@ -1,6 +1,6 @@
 const moment = require('moment')
 const months = moment.monthsShort()
-
+const mongod = require('mongodb')
 
 const doubleDigit = (number) => {
   number = number.toString()
@@ -105,13 +105,19 @@ const hydrate = (schemaName, object) => {
   return instance
 }
 
+const hydrateFrom = (schemaName, parent, propertyName, value) => {
+  const schema = schemas[schemaName]
+  const property = schema.properties[propertyName]
+  parent[propertyName] = Types[property.type].hydrate(parent, property, value)
+}
 
 const dehydrate = (schemaName, object) => {
   const schema = schemas[schemaName]
   const clone = { ...object }
-  for (const propertyName in schema) {
-    const property = schema[propertyName]
+  for (const propertyName in schema.properties) {
+    const property = schema.properties[propertyName]
     const value = clone[propertyName]
+    console.log(propertyName, property)
     clone[propertyName] = Types[property.type].dehydrate(clone, property, value)
   }
   return clone
@@ -136,7 +142,7 @@ module.exports = async ({ mongo, imdb, bot }) => {
   const toggleTrackSerie = async (serie, userId) => {
     if (!serie._id) {
       await loadSeasons(serie)
-      const { insertedId } = await collection.insertOne(serie)
+      const { insertedId } = await collection.insertOne(dehydrate('serie', serie))
       serie._id = insertedId
     }
     const userTrackingIndex = serie.userIds.indexOf(userId)
@@ -151,7 +157,7 @@ module.exports = async ({ mongo, imdb, bot }) => {
         _id: serie._id
       })
       serie._id = null
-    } else if (serie.userIds.length > 1) {
+    } else if (serie.userIds.length >= 1) {
       await collection.updateOne({
         _id: serie._id,
       }, {
@@ -207,7 +213,7 @@ module.exports = async ({ mongo, imdb, bot }) => {
       }
     }
 
-    serie.seasons = seasons
+    hydrateFrom('serie', serie, 'seasons', seasons)
     return seasons
   }
 

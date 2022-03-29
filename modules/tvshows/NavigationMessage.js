@@ -56,6 +56,8 @@ module.exports = class NavigationMessage {
   }
 
   async previous() {
+    if (!this.breadcrumb.length)
+      return
     this.current = this.breadcrumb.pop()
     await this.showCurrent()
   }

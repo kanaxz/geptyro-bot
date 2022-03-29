@@ -1,10 +1,6 @@
 
 module.exports = ({ tvshows, scheduler, commands, youtube }) => {
 
-  scheduler.addJob('tvshows:week', { 'monday': [8] }, async () => {
-    await commands.week(tvshows.channel, 0, true)
-  })
-
   scheduler.addJob('tvshows:update', { 'all': [8] }, async () => {
     const cursor = await tvshows.collection.find({})
     while (await cursor.hasNext()) {
@@ -18,8 +14,11 @@ module.exports = ({ tvshows, scheduler, commands, youtube }) => {
       })
     }
   })
-  /**/
 
+  scheduler.addJob('tvshows:week', { 'monday': [8] }, async () => {
+    await commands.week(tvshows.channel, 0, true)
+  })
+  /**/
 
   scheduler.addJob('tvshows:day', { 'all': [8, 20] }, async () => {
     const episodes = await commands.day(tvshows.channel, 0, true)
@@ -31,9 +30,10 @@ module.exports = ({ tvshows, scheduler, commands, youtube }) => {
         part: ['id'],
         maxResults: 1,
         type: ['video'],
-        q: `${episode.season.fullTitle} official trailer`
+        q: `${episode.season.getFullPath()} official trailer`
       })
-      await tvshows.channel.send(youtube.buildUrl(video.id.videoId))
+      const videoUrl = youtube.buildUrl(video.id.videoId)
+      await tvshows.channel.send(`${episode.season.getFullPath()} starting today ${videoUrl}`)
     }
   })
 }

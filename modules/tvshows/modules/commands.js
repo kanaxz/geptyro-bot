@@ -198,7 +198,7 @@ module.exports = ({ tvshows, bot, imdb, piratebay, tinyUrl }) => {
     async episode(navigation, episode) {
       const embed = new MessageEmbed()
 
-      embed.setTitle(`${episode.season.getFullPath()} ${episode.title}`)
+      embed.setTitle(`${episode.getFullPath()} ${episode.title}`)
       embed.setDescription(episode.plot)
       let torrents = await piratebay.getTorrents({
         q: episode.getFullPath(),
@@ -246,10 +246,8 @@ module.exports = ({ tvshows, bot, imdb, piratebay, tinyUrl }) => {
       let episodes
       startDate = startDate.startOf('day')
       endDate = endDate.endOf('day')
-      this.title = `Episodes from ${formatDateDay(startDate)}`
-      if (!startDate.isSame(endDate, 'days')) {
-        this.title += ` to ${formatDateDay(endDate)}`
-      }
+      this.title = 'Episodes'
+
 
       this.task(async () => {
         episodes = null
@@ -269,8 +267,17 @@ module.exports = ({ tvshows, bot, imdb, piratebay, tinyUrl }) => {
         if (!episodes.length)
           return mainEmbed.setDescription('No results')
 
-        mainEmbed.setDescription(`${startDate.format('DD/MM/YYYY')} - ${endDate.format('DD/MM/YYYY')}`)
-
+        mainEmbed.setDescription(startDate.format('DD/MM/YYYY'))
+        if (!startDate.isSame(endDate, 'days')) {
+          mainEmbed.description += ` - ${endDate.format('DD/MM/YYYY')}`
+        }
+        const fields = buildEmbedMessageFields(episodes.map((episode, index) => ({
+          index: index + 1,
+          date: episode.releasedBeautified,
+          title: episode.getFullPath(),
+        })))
+        mainEmbed.addFields(fields)
+        /*
         const days = episodes.reduce((days, episode) => {
           let day = days.find((d) => d.date.getTime() === episode.released.getTime())
           if (!day) {
@@ -296,7 +303,7 @@ module.exports = ({ tvshows, bot, imdb, piratebay, tinyUrl }) => {
           embed.addFields(fields)
           return embed
         })
-
+        /**/
         let messageHandler
         if (!preventNavigation) {
           messageHandler = getElement(episodes, (episode) => {
@@ -310,7 +317,6 @@ module.exports = ({ tvshows, bot, imdb, piratebay, tinyUrl }) => {
         }
 
         return {
-          embeds,
           messageHandler,
           reactions,
         }
