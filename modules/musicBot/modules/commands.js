@@ -76,7 +76,7 @@ module.exports = (self, { player, bot, playlist, youtube }) => {
       await processPlayArgs(msg, args.join(' '), true)
     },
     volume: async (msg, volume) => {
-      self.setVolume(volume)
+      player.setVolume(volume)
       await msg.delete()
     },
     remove: async (msg, index) => {

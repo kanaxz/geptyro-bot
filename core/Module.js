@@ -67,8 +67,18 @@ module.exports = class Module {
     }
     this.isInitialized = true
     await this.initModules()
-    if (this.self.childrenModulesInitialized) {
-      this.self.childrenModulesInitialized()
+
+    if (!this.parent) {
+      await this.ready()
+    }
+  }
+
+  async ready() {
+    if (this.self.ready) {      
+      await this.self.ready()
+    }
+    for (const moduleName in this.modules) {
+      await this.modules[moduleName].ready()
     }
   }
 

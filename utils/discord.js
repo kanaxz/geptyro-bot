@@ -10,6 +10,8 @@ const deleteAllMessagesOfChannel = async (channel) => {
 }
 
 const buildEmbedMessageFields = (array, fields) => {
+  if (!fields)
+    fields = Object.keys(array[0])
   return fields.map((fieldName) => {
     return {
       name: fieldName,

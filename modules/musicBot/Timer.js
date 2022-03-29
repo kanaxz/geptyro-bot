@@ -2,6 +2,7 @@ module.exports = class Timer {
 
   constructor() {
     this.start()
+    this.pauseDate = this.startDate
   }
 
   start() {

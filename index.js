@@ -10,8 +10,14 @@ const global = new Module({
 })
 
 const start = async () => {
-  await global.init()
-  global.printTree()
+  try {
+    await global.init()
+    //global.printTree()
+  } catch (e) {
+    console.error(e)
+    process.exit()
+  }
+
 }
 
 

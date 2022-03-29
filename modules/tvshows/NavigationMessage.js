@@ -10,35 +10,48 @@ const navigationReactions = {
   }
 }
 
+
+const activablePromise = () => {
+  let activate
+  const promise = new Promise((resolve) => activate = resolve)
+  return {
+    activate,
+    promise
+  }
+}
+
 module.exports = class NavigationMessage {
   constructor(bot) {
     this.bot = bot
     this.breadcrumb = []
     this.message = null
     this.currentReactions = []
+    this.handleMessages = true
+    this.showing
   }
 
   async start(channel, display) {
     this.channel = channel
-    this.current = display
+    this.current = await display
     await this.showCurrent()
 
     this.bot.on('messageCreate', async (msg) => {
-      if (msg.channel.id !== this.channel.id)
+      if (msg.channel.id !== this.channel.id || !this.handleMessages)
         return
 
-      if (this.current.messageHandler) {
-        if (await this.current.messageHandler(msg)) {
-          tryDeleteMessage(msg)
+      const messageHandlers = this.current.messageHandlers || this.current.messageHandler && [this.current.messageHandler] || []
+      for (const messageHandler of messageHandlers) {
+        if (await messageHandler(msg)) {
+          return
         }
       }
+      this.handleMessages = false
     })
   }
 
   async navigate(display) {
-    display = await display
     this.breadcrumb.push(this.current)
-    this.current = display
+    this.current = await display
     await this.showCurrent()
   }
 
@@ -48,21 +61,22 @@ module.exports = class NavigationMessage {
   }
 
   async update(display) {
-    Object.assign(this.current, display)
-    await this.message.edit({ embeds: [this.current.embed] })
+    Object.assign(this.current, await display)
+    if (this.showing)
+      await this.showing
+    const embeds = this.current.embeds || [this.current.embed]
+    await this.message.edit({ embeds: embeds })
   }
 
   async addReactions(display) {
-    const reactions = []
+    let reactions = []
     for (const reactionName in navigationReactions) {
       if (navigationReactions[reactionName].check(this)) {
         reactions.push(reactionName)
       }
     }
     if (this.current.reactions) {
-      for (const reactionName in this.current.reactions) {
-        reactions.push(reactionName)
-      }
+      reactions = reactions.concat(Object.keys(this.current.reactions))
     }
     for (const reaction of reactions) {
       if (this.current === display) {
@@ -72,11 +86,13 @@ module.exports = class NavigationMessage {
   }
 
   async showCurrent() {
-    const embed = this.current.embed
+    const activable = activablePromise()
+    this.showing = activable.promise
+    const embeds = this.current.embeds || [this.current.embed]
     if (this.message) {
-      await this.message.edit({ embeds: [embed] })
+      await this.message.edit({ embeds })
     } else {
-      this.message = await this.channel.send({ embeds: [embed] })
+      this.message = await this.channel.send({ embeds })
       const filter = ((reaction, user) => user.id !== this.bot.user.id)
       const collector = this.message.createReactionCollector({ filter, time: 1000 * 60 * 60 * 5 })
       collector.on('collect', async (reaction, user) => {
@@ -93,7 +109,10 @@ module.exports = class NavigationMessage {
         }
       })
     }
+
     await this.message.reactions.removeAll()
     await this.addReactions(this.current)
+    this.showing = null
+    await activable.activate()
   }
 }

@@ -15,7 +15,7 @@ module.exports = class Self {
 
   constructor(module) {
     this.events = {}
-    this.module = module
+    this.module = module    
   }
 
   getter(propertyName, get) {

@@ -33,7 +33,6 @@ module.exports = (self, { musicBot }) => {
   }
 
   self.removeAtIndex = (index) => {
-    console.log(index)
     if (index > playlist.length - 1 || index < 0)
       throw new Error()
     const music = playlist[index]

@@ -7,7 +7,7 @@ module.exports = async (self, { bot, states }) => {
     throw new Error('Music channel not found')
   }
 
-  self.childrenModulesInitialized = async () => {
+  self.ready = async () => {
     await self.state.save()
   }
 }
