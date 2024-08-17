@@ -1,25 +1,37 @@
-const Module = require('./core/Module')
-
-const global = new Module({
-  name: 'global',
-  self: {},
-  path: __dirname,
-  level: 0,
-  isDirectory: true,
-  initFunction: () => { }
-})
+require('./setup')
+const CoreModule = require('sools-core-server/CoreModule')
+const config = require('./config')
+const { join } = require('path')
 
 const start = async () => {
-  try {
-    await global.init()
-    //global.printTree()
-    console.log("__ready__")
-  } catch (e) {
-    console.error(e)
-    process.exit()
-  }
+  const core = new CoreModule({
+    config,
+    root: join(__dirname, '/src'),
+    node_modules: join(__dirname, '/node_modules'),
+    bundles: [
+      'sools-core-server',
+      'sools-migrations',
+      'sools-mongo',
+      'sools-modeling-server',
+    ]
+  })
 
+  await core.start()
+  console.log('PURGE START')
+  await core.object.trigger('purge')
+  console.log('PURGE END')
+  console.log('MIGRATE START')
+  await core.object.trigger('migrate')
+  console.log('MIGRATE END')
+  return core
 }
 
-
-start()
+module.exports = start()
+  .catch((err) => {
+    if (err.detail) {
+      console.error(JSON.stringify(err.detail, null, ' '))
+      console.error(err)
+    } else {
+      console.error(err)
+    }
+  })

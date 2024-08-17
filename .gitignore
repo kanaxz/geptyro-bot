@@ -1,2 +1,2 @@
-**/node_modules
-modules/config/private.js
+node_modules
+config/private.js

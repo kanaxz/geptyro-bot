@@ -1,9 +1,22 @@
 version: '3'
 services:
-  mongodb:
+  server:
+    build: .
+    env_file:
+      - 'common.env'
+    container_name: geptyro-bot-server
+    volumes:
+      - .:/app/
+      - /app/node_modules
+    ports:
+      - "10001:10001"
+    depends_on:
+      - database
+    working_dir: /app
+  database:
     image: mongo:4.2.18 # Version used on our MongoAtlas cluster
     ports:
-      - 27018:27017
+      - 27030:27017
     volumes:
       - mongodata:/data/db
 volumes:
