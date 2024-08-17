@@ -21,6 +21,12 @@
   "mongodb": "^4.4.1",
   "open": "^8.4.0",
   "play-sound": "^1.1.6",
-  "sodium": "^3.0.2"
+  "sodium": "^3.0.2",
+  "sools-core": "1.6.0",
+  "sools-core-server": "1.2.0",
+  "sools-migrations": "1.1.0",
+  "sools-modeling": "1.2.0",
+  "sools-modeling-server": "1.2.0",
+  "sools-mongo": "1.2.0"
  }
 }
