@@ -1,12 +1,12 @@
 {
  "name": "geptyro-bot",
- "version": "1.1.0",
+ "version": "1.2.0",
  "description": "",
  "main": "index.js",
  "scripts": {
   "start": "node index.js",
   "link": "sools-link . geptyro-bot",
-  "dev": "node index.js"
+  "prod": "node index.js"
  },
  "author": "",
  "license": "ISC",
@@ -22,7 +22,7 @@
   "open": "^8.4.0",
   "play-sound": "^1.1.6",
   "sodium": "^3.0.2",
-  "sools-core": "^1.5.0",
+  "sools-core": "^1.6.0",
   "sools-core-server": "^1.0.0",
   "sools-migrations": "^1.0.0",
   "sools-modeling": "^1.0.0",

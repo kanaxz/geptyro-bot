@@ -6,7 +6,7 @@ services:
       - 'common.env'
     container_name: geptyro-bot-server
     volumes:
-      - .:/app/
+      - ./:/app:cached
       - /app/node_modules
     ports:
       - "10001:10001"
