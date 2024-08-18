@@ -14,12 +14,10 @@ module.exports = {
         check: () => queue.length > 1,
         execute: () => queue.previous(),
       },
-      /*
       '⏹️': {
         check: () => true,
-        execute: ()=>player.stop(),
+        execute: () => queue.splice(0, queue.length),
       },
-      */
       '⏸️': {
         check: () => true,
         execute: () => {

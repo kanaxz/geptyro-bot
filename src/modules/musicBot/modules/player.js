@@ -19,6 +19,15 @@ module.exports = {
       onCurrentEnded.trigger(current)
     }
 
+    const stop = async () => {
+      if (voiceConnection) {
+        voiceConnection.disconnect()
+        voiceConnection.destroy()
+        voiceConnection = null
+      }
+      audioPlayer.stop(true)
+    }
+
     const joinChannel = async (voiceChannel) => {
       if (voiceConnection && voiceConnection.joinConfig.channelId === voiceChannel.id) {
         return
@@ -35,7 +44,10 @@ module.exports = {
 
     const playCurrent = async () => {
       const music = queue.current
-      if (!music || music === currentMusic) {
+      if (!music) {
+        return stop()
+      }
+      if (music === currentMusic) {
         return
       }
       const stream = await ytdl(music.url, { filter: 'audioonly', highWaterMark: 1 << 25 })

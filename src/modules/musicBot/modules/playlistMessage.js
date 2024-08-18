@@ -70,6 +70,8 @@ module.exports = {
     })
 
     const showCurrentEnded = async (music) => {
+      if (!music) { return }
+
       await musicChannel.send(`Music [${music.name}](${music.url}) added by ${music.username} finished`)
     }
 

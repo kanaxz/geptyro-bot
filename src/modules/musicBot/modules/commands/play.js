@@ -5,18 +5,17 @@ module.exports = ({ youtube, player, musicBot }) => {
     const query = interaction.options.getString('query')
     if (query.startsWith(youtube.url)) {
       const url = new URL(query)
-
       const videoId = url.searchParams.get('v')
       const video = await youtube.getVideo(videoId)
-
       return video
     } else {
-      const { data: { items: [video] } } = await youtube.api.search.list({
-        part: youtube.part,
+      const { data: { items: [partialVideo] } } = await youtube.api.search.list({
+        part: 'snippet',
         maxResults: 1,
-        type: ['video'],
+        type: 'video',
         q: query
       })
+      const video = await youtube.getVideo(partialVideo.id.videoId)
       return video
     }
   }

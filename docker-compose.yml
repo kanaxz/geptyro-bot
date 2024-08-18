@@ -2,6 +2,7 @@ version: '3'
 services:
   server:
     build: .
+    restart: unless-stopped
     env_file:
       - 'common.env'
     container_name: geptyro-bot-server
@@ -14,6 +15,8 @@ services:
       - database
     working_dir: /app
   database:
+    restart: unless-stopped
+    container_name: geptyro-bot-database
     image: mongo:4.2.18 # Version used on our MongoAtlas cluster
     ports:
       - 27030:27017
