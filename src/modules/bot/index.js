@@ -31,6 +31,7 @@ module.exports = {
     bot.commands = new Collection()
 
     core.on('ready', async () => {
+      console.log('ready',  bot.commands.map((c) => c.data.name))
       await rest.put(
         Routes.applicationGuildCommands(clientId, guildId),
         { body: bot.commands.map((c) => c.data) },

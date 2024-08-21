@@ -11,8 +11,6 @@ const start = async () => {
   })
 
   await core.start()
-  await core.object.trigger('purge')
-  await core.object.trigger('migrate')
   return core
 }
 

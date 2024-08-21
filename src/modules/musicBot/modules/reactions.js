@@ -1,7 +1,7 @@
 module.exports = {
   dependencies: [
     require('./player'),
-    require('../index'),
+    require('./main'),
     require('./playlistMessage'),
     require('../../bot'),
   ],

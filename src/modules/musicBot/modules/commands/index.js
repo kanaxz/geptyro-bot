@@ -3,8 +3,12 @@ const commands = [
   require('./playlist'),
 ]
 module.exports = {
-  name: null,
-  dependencies: ['bot', 'musicBot', 'player', 'youtube'],
+  dependencies: [
+    require('../../../bot'),
+    require('../main'),
+    require('../player'),
+    require('../../../youtube'),
+  ],
   construct: async (deps) => {
     const { bot } = deps
     for (const command of commands) {

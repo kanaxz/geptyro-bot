@@ -15,7 +15,7 @@ module.exports = {
   dependencies: [
     require('../../bot'),
     require('./player'),
-    require('../index')
+    require('./main')
   ],
   construct: async ({ bot, player, musicBot: { queue, musicChannel } }) => {
     let playlistMessage

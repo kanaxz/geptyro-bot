@@ -6,7 +6,7 @@ const Event = require('sools-core/types/Event')
 module.exports = {
   name: 'player',
   dependencies: [
-    require('../index'),
+    require('./main'),
   ],
   construct: ({ musicBot: { queue } }) => {
     const audioPlayer = createAudioPlayer()

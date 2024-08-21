@@ -1,11 +1,11 @@
 {
  "name": "geptyro-bot",
- "version": "1.12.0",
+ "version": "1.13.0",
  "private": true,
  "description": "",
  "main": "index.js",
  "scripts": {
-  "start": "echo $ENV && docker-compose -f docker-compose.$ENV.yml -p geptyro-bot-$ENV --profile $ENV --env-file ./envs/$ENV.env up",
+  "start": "echo $ENV && docker-compose -f docker-compose.$ENV.yml -p geptyro-bot-$ENV --profile $ENV --env-file ./envs/$ENV.env up -d",
   "stop": "docker-compose -f docker-compose.$ENV.yml -p geptyro-bot-$ENV --profile $ENV --env-file ./envs/$ENV.env down",
   "prod:start": "export ENV=prod && npm run start",
   "prod:stop": "export ENV=prod && npm run stop",
