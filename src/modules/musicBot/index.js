@@ -2,7 +2,10 @@ const Queue = require('sools-core/types/Queue')
 
 module.exports = {
   name: 'musicBot',
-  dependencies: ['youtube', 'bot'],
+  dependencies: [
+    require('../youtube'),
+    require('../bot'),
+  ],
   construct: async ({ youtube, bot }) => {
     const queue = new Queue()
     const musicChannel = bot.channels.cache.find(channel => channel.name === 'music-bot')

@@ -4,7 +4,10 @@ const Timer = require('../Timer')
 const Event = require('sools-core/types/Event')
 
 module.exports = {
-  dependencies: ['musicBot'],
+  name: 'player',
+  dependencies: [
+    require('../index'),
+  ],
   construct: ({ musicBot: { queue } }) => {
     const audioPlayer = createAudioPlayer()
     const timer = new Timer()

@@ -1,12 +1,16 @@
 {
  "name": "geptyro-bot",
- "version": "1.8.0",
+ "version": "1.12.0",
+ "private": true,
  "description": "",
  "main": "index.js",
  "scripts": {
-  "start": "node index.js",
-  "link": "sools-link . geptyro-bot",
-  "prod": "node index.js"
+  "start": "echo $ENV && docker-compose -f docker-compose.$ENV.yml -p geptyro-bot-$ENV --profile $ENV --env-file ./envs/$ENV.env up",
+  "stop": "docker-compose -f docker-compose.$ENV.yml -p geptyro-bot-$ENV --profile $ENV --env-file ./envs/$ENV.env down",
+  "prod:start": "export ENV=prod && npm run start",
+  "prod:stop": "export ENV=prod && npm run stop",
+  "prod:restart": "npm run prod:stop && npm run prod:start",
+  "dev:start": "export ENV=dev && node index"
  },
  "author": "",
  "license": "ISC",
@@ -22,11 +26,11 @@
   "open": "^8.4.0",
   "play-sound": "^1.1.6",
   "sodium": "^3.0.2",
-  "sools-core": "1.9.0",
-  "sools-core-server": "1.5.0",
-  "sools-migrations": "1.2.0",
-  "sools-modeling": "1.5.0",
-  "sools-modeling-server": "1.4.0",
-  "sools-mongo": "1.4.0"
+  "sools-core": "1.14.0",
+  "sools-core-server": "1.19.0"
+ },
+ "repository": {
+  "type": "git",
+  "url": "https://github.com/kanaxz/geptyro-bot.git"
  }
 }

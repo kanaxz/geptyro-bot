@@ -1,9 +1,10 @@
 const { Client, Events, Collection, REST, Routes, GatewayIntentBits } = require('discord.js')
-const { dependencies } = require('../musicBot')
 
 module.exports = {
   name: 'bot',
-  dependencies: ['core'],
+  dependencies: [
+    require('sools-core-server')
+  ],
   construct: async ({ core }, { discord: { token, clientId, guildId } }) => {
     const bot = new Client({
       intents: [

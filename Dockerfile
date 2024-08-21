@@ -8,4 +8,4 @@ RUN npm install
 
 RUN npm rebuild @discordjs/opus
 
-CMD [ "npm", "run", "prod"]
+CMD [ "node", "index"]

@@ -11,7 +11,12 @@ const durationToString = (duration) => {
 }
 
 module.exports = {
-  dependencies: ['bot', 'player', 'musicBot'],
+  name:'playlistMessage',
+  dependencies: [
+    require('../../bot'),
+    require('./player'),
+    require('../index')
+  ],
   construct: async ({ bot, player, musicBot: { queue, musicChannel } }) => {
     let playlistMessage
     const onCreated = new Event()

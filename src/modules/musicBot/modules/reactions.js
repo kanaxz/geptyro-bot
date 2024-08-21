@@ -1,8 +1,10 @@
-const { dependencies } = require("..")
-
 module.exports = {
-  name: null,
-  dependencies: ['player', 'musicBot', 'playlistMessage', 'bot'],
+  dependencies: [
+    require('./player'),
+    require('../index'),
+    require('./playlistMessage'),
+    require('../../bot'),
+  ],
   construct: ({ player, musicBot: { queue }, playlistMessage, bot }) => {
 
     const isPaused = () => {
