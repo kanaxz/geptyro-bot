@@ -1,18 +1,15 @@
 require('./setup')
 const CoreModule = require('sools-core-server/CoreModule')
 const config = require('./config')
-const { join } = require('path')
 
 const start = async () => {
   const core = new CoreModule({
     config,
-    root: join(__dirname, '/src'),
-    node_modules: join(__dirname, '/node_modules'),
-    bundles: [
-      'sools-core-server',
-      'sools-migrations',
-      'sools-mongo',
-      'sools-modeling-server',
+    dependencies: [
+      require('sools-core-server'),
+      require('sools-migrations'),
+      require('sools-mongo'),
+      require('sools-modeling-server'),
     ]
   })
 
