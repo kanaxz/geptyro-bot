@@ -1,6 +1,6 @@
 {
  "name": "geptyro-bot",
- "version": "1.7.0",
+ "version": "1.8.0",
  "description": "",
  "main": "index.js",
  "scripts": {
@@ -22,11 +22,11 @@
   "open": "^8.4.0",
   "play-sound": "^1.1.6",
   "sodium": "^3.0.2",
-  "sools-core": "1.7.0",
-  "sools-core-server": "1.4.0",
-  "sools-migrations": "1.1.0",
-  "sools-modeling": "1.4.0",
-  "sools-modeling-server": "1.3.0",
-  "sools-mongo": "1.3.0"
+  "sools-core": "1.9.0",
+  "sools-core-server": "1.5.0",
+  "sools-migrations": "1.2.0",
+  "sools-modeling": "1.5.0",
+  "sools-modeling-server": "1.4.0",
+  "sools-mongo": "1.4.0"
  }
 }
