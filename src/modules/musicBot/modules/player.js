@@ -48,12 +48,12 @@ module.exports = {
     const playCurrent = async () => {
       const music = queue.current
       if (!music) {
-        return stop()
+        
       }
       if (music === currentMusic) {
         return
       }
-      const stream = await ytdl(music.url, { filter: 'audioonly', highWaterMark: 1 << 25 })
+      const stream = await ytdl(music.url, { filter: 'audioonly' })
       audioResource = createAudioResource(stream, { inlineVolume: true })
       audioPlayer.play(audioResource)
       timer.start()

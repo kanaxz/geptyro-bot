@@ -1,6 +1,6 @@
 {
  "name": "geptyro-bot",
- "version": "1.13.0",
+ "version": "1.14.0",
  "private": true,
  "description": "",
  "main": "index.js",
@@ -26,7 +26,7 @@
   "open": "^8.4.0",
   "play-sound": "^1.1.6",
   "sodium": "^3.0.2",
-  "sools-core": "1.14.0",
+  "sools-core": "^1.15.0",
   "sools-core-server": "1.19.0"
  },
  "repository": {

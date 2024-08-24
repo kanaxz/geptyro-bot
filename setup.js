@@ -1,1 +1,0 @@
-require('sools-core/setup')

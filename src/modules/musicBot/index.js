@@ -1,5 +1,3 @@
-const Queue = require('sools-core/types/Queue')
-
 module.exports = {
   modules: [
     require('./modules/main'),

@@ -1,4 +1,3 @@
-require('./setup')
 const CoreModule = require('sools-core-server/CoreModule')
 const config = require('./config')
 
