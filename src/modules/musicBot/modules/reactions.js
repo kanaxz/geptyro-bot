@@ -1,9 +1,14 @@
-module.exports = {
+import musicPlayer from './musicPlayer.js'
+import main from './main.js'
+import playlistMessage from './playlistMessage.js'
+import bot from '../../discord/bot.js'
+
+export default {
   dependencies: [
-    require('./player'),
-    require('./main'),
-    require('./playlistMessage'),
-    require('../../bot'),
+    musicPlayer,
+    main,
+    playlistMessage,
+    bot,
   ],
   construct: ({ player, musicBot: { queue }, playlistMessage, bot }) => {
 

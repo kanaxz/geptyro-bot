@@ -1,16 +1,20 @@
 {
  "name": "geptyro-bot",
- "version": "1.14.0",
+ "version": "1.15.0",
  "private": true,
  "description": "",
+ "type": "module",
  "main": "index.js",
  "scripts": {
-  "start": "echo $ENV && docker-compose -f docker-compose.$ENV.yml -p geptyro-bot-$ENV --profile $ENV --env-file ./envs/$ENV.env up -d",
+  "start": "echo $ENV && docker-compose -f docker-compose.$ENV.yml -p geptyro-bot-$ENV --profile $ENV --env-file ./envs/$ENV.env up -d --build",
   "stop": "docker-compose -f docker-compose.$ENV.yml -p geptyro-bot-$ENV --profile $ENV --env-file ./envs/$ENV.env down",
   "prod:start": "export ENV=prod && npm run start",
   "prod:stop": "export ENV=prod && npm run stop",
   "prod:restart": "npm run prod:stop && npm run prod:start",
-  "dev:start": "export ENV=dev && node index"
+  "rollup:watch": "rollup -c --watch",
+  "rollup:build": "rollup -c",
+  "dev:watch": "nodemon dist/bundle.js",
+  "dev:start": "export ENV=dev && npm run rollup:build && node dist/bundle.js"
  },
  "author": "",
  "license": "ISC",
@@ -21,16 +25,25 @@
   "@googleapis/youtube": "^2.0.0",
   "axios": "^0.26.1",
   "discord.js": "^14.15.3",
+  "ffmpeg-static": "^5.2.0",
+  "mic": "^2.1.2",
   "moment": "^2.29.1",
   "mongodb": "^4.4.1",
   "open": "^8.4.0",
   "play-sound": "^1.1.6",
   "sodium": "^3.0.2",
   "sools-core": "^1.15.0",
-  "sools-core-server": "1.19.0"
+  "sools-core-server": "^1.20.0"
  },
  "repository": {
   "type": "git",
   "url": "https://github.com/kanaxz/geptyro-bot.git"
+ },
+ "devDependencies": {
+  "@rollup/plugin-commonjs": "^26.0.1",
+  "@rollup/plugin-json": "^6.1.0",
+  "@rollup/plugin-node-resolve": "^15.2.3",
+  "rollup": "^2.79.1",
+  "rollup-plugin-terser": "^7.0.2"
  }
 }

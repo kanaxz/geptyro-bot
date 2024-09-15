@@ -1,10 +1,12 @@
-const Queue = require('sools-core/types/Queue')
+import Queue  from 'sools-core/types/Queue.js'
+import youtube from '../../youtube/index.js'
+import bot from '../../discord/bot.js'
 
-module.exports = {
+export default {
   name: 'musicBot',
   dependencies: [
-    require('../../youtube'),
-    require('../../bot'),
+    youtube,
+    bot,
   ],
   construct: async ({ youtube, bot }) => {
     const queue = new Queue()

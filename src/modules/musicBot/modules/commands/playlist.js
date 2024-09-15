@@ -1,7 +1,7 @@
-const { SlashCommandBuilder } = require('discord.js')
+import { SlashCommandBuilder } from 'discord.js'
 
-module.exports = ({ player, youtube, musicBot }) => {
-  const execute = player.voiceCommandWrapper(async (interaction) => {
+export default ({ musicPlayer, youtube, musicBot }) => {
+  const execute = musicPlayer.voiceCommandWrapper(async (interaction) => {
     const query = interaction.options.getString('query')
 
     const url = new URL(query)

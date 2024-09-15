@@ -1,13 +1,19 @@
+import bot from '../../../discord/bot.js'
+import youtube from '../../../youtube/index.js'
+import main from '../main.js'
+import musicPlayer from '../musicPlayer.js'
+import play from './play.js'
+import playlist from './playlist.js'
 const commands = [
-  require('./play'),
-  require('./playlist'),
+  play,
+  playlist
 ]
-module.exports = {
+export default {
   dependencies: [
-    require('../../../bot'),
-    require('../main'),
-    require('../player'),
-    require('../../../youtube'),
+    bot,
+    main,
+    musicPlayer,
+    youtube
   ],
   construct: async (deps) => {
     const { bot } = deps

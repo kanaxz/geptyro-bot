@@ -1,7 +1,9 @@
-const { join } = require('path')
+import { join } from 'path'
+import privateModule from './private.js'
 
-const root = join(__dirname, '..')
-module.exports = {
+const root = join(import.meta.url, '..')
+console.log(root)
+export default {
   root,
-  ...require('./private'),
+  ...privateModule,
 }

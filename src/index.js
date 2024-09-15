@@ -1,8 +1,13 @@
+import bot from './modules/discord/bot.js'
+import musicBot from './modules/musicBot/index.js'
+import youtube from './modules/youtube/index.js'
+import playbackBot from './modules/playbackBot/index.js'
 
-module.exports = {
+export default {
   modules: [
-    require('./modules/bot'),
-    require('./modules/musicBot'),
-    require('./modules/youtube'),
+    bot,
+    musicBot,
+    youtube,
+    playbackBot
   ]
 }

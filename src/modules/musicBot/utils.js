@@ -11,6 +11,6 @@ const deleteReply = (interaction) => {
 }
 
 
-module.exports = {
+export default {
   deleteReply,
 }

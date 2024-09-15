@@ -1,9 +1,14 @@
-const { Client, Events, Collection, REST, Routes, GatewayIntentBits } = require('discord.js')
+import { Client, Events, Collection, REST, Routes, GatewayIntentBits } from 'discord.js'
+import player from './player.js'
+import soolsCoreServer from 'sools-core-server'
 
-module.exports = {
+export default {
   name: 'bot',
+  modules: [
+    player,
+  ],
   dependencies: [
-    require('sools-core-server')
+    soolsCoreServer
   ],
   construct: async ({ core }, { discord: { token, clientId, guildId } }) => {
     const bot = new Client({
@@ -31,7 +36,7 @@ module.exports = {
     bot.commands = new Collection()
 
     core.on('ready', async () => {
-      console.log('ready',  bot.commands.map((c) => c.data.name))
+      console.log('ready', bot.commands.map((c) => c.data.name))
       await rest.put(
         Routes.applicationGuildCommands(clientId, guildId),
         { body: bot.commands.map((c) => c.data) },

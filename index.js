@@ -1,19 +1,21 @@
-const CoreModule = require('sools-core-server/CoreModule')
-const config = require('./config')
+import CoreModule from 'sools-core-server/CoreModule'
+import config  from './config/index.js'
+import src from './src/index.js'
 
 const start = async () => {
   const core = new CoreModule({
     config,
     modules: [
-      require('./src'),
+      src,
     ]
   })
 
   await core.start()
+  console.log('geptyro-bot started')
   return core
 }
 
-module.exports = start()
+start()
   .catch((err) => {
     if (err.detail) {
       console.error(JSON.stringify(err.detail, null, ' '))

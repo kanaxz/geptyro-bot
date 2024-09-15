@@ -1,6 +1,10 @@
-const { EmbedBuilder } = require('discord.js')
-const Event = require('sools-core/types/Event')
-const { interval } = require('sools-core/utils/promise')
+import { EmbedBuilder } from 'discord.js'
+import Event from 'sools-core/types/Event.js'
+import { interval } from 'sools-core/utils/promise.js'
+import bot from '../../discord/bot.js'
+import player from '../../discord/player.js'
+import musicPlayer from './musicPlayer.js'
+import main from './main.js'
 
 const durationToString = (duration) => {
   let modulo = (duration % 60).toString()
@@ -10,14 +14,15 @@ const durationToString = (duration) => {
   return `${Math.floor(duration / 60)}:${modulo}`
 }
 
-module.exports = {
-  name:'playlistMessage',
+export default {
+  name: 'playlistMessage',
   dependencies: [
-    require('../../bot'),
-    require('./player'),
-    require('./main')
+    bot,
+    player,
+    musicPlayer,
+    main,
   ],
-  construct: async ({ bot, player, musicBot: { queue, musicChannel } }) => {
+  construct: async ({ bot, player, musicPlayer, musicBot: { queue, musicChannel } }) => {
     let playlistMessage
     const onCreated = new Event()
 
@@ -51,7 +56,7 @@ module.exports = {
 
         embed
           .addFields([...fields])
-          .setTitle(`Playlist ${' '.repeat(70)}  ${durationToString(player.timer.duration())} / ${currentMusic.duration} ${' '.repeat(10)} ${player.status === 'paused' && '⏸️' || ''}`)
+          .setTitle(`Playlist ${' '.repeat(70)}  ${durationToString(musicPlayer.timer.duration())} / ${currentMusic.duration} ${' '.repeat(10)} ${player.status === 'paused' && '⏸️' || ''}`)
           .setDescription(' ')
           .setImage(currentMusic.thumbnail)
       } else {
@@ -80,7 +85,7 @@ module.exports = {
       await musicChannel.send(`Music [${music.name}](${music.url}) added by ${music.username} finished`)
     }
 
-    player.onCurrentEnded(showCurrentEnded)
+    musicPlayer.onCurrentEnded(showCurrentEnded)
 
     return {
       onCreated,

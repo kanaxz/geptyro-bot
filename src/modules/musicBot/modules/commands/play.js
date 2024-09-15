@@ -1,6 +1,6 @@
-const { SlashCommandBuilder } = require('discord.js')
+import { SlashCommandBuilder } from 'discord.js'
 
-module.exports = ({ youtube, player, musicBot }) => {
+export default ({ youtube, musicPlayer, musicBot }) => {
   const getVideoFromQuery = async (interaction) => {
     const query = interaction.options.getString('query')
     if (query.startsWith(youtube.url)) {
@@ -20,7 +20,7 @@ module.exports = ({ youtube, player, musicBot }) => {
     }
   }
 
-  const execute = player.voiceCommandWrapper(async (interaction) => {
+  const execute = musicPlayer.voiceCommandWrapper(async (interaction) => {
     const video = await getVideoFromQuery(interaction)
     if (!video || video.snippet.title === 'Deleted video') {
       await interaction.reply({

@@ -1,8 +1,8 @@
-const { youtube } = require('@googleapis/youtube')
+import { youtube } from '@googleapis/youtube'
 const YOUTUBE_URL = 'https://www.youtube.com'
 const part = ['id', 'snippet', 'contentDetails']
 
-module.exports = {
+export default {
   name: 'youtube',
   construct: ({ }, config) => {
     console.log(config.googleApiToken)

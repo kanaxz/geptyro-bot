@@ -1,4 +1,5 @@
-module.exports = class Timer {
+export default (
+	class Timer {
   constructor() {
     this.start()
     this.pauseDate = this.startDate
@@ -23,3 +24,4 @@ module.exports = class Timer {
     return Math.floor(((this.pauseDate || new Date()) - this.startDate - this.pauseTime) / 1000)
   }
 }
+)
